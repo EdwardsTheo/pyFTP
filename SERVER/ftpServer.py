@@ -1,14 +1,20 @@
-import socket
-from threading import Thread
-from tkinter.tix import Select
-import os, bcrypt, glob
-import sys
+import json
 import pickle
 
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRCFTP\\pyFTP\\')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRCFTP\\pyFTP\\SQL')
+import bcrypt
+import glob
+import os
+import socket
+import sys
+from threading import Thread
+from os import listdir
+from os.path import isfile, join
+
+from SQL.SELECT import select_id_site
+
+sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\')
+sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\SQL')
 from SQL import SELECT, MODIFY
-from colors import Color
 
 # Adresse IP du serveur
 HOST = "127.0.0.1"
@@ -32,7 +38,7 @@ def main():
     while True:
         client, address = MySocket.accept()
         print("Connecté avec " + str(address))
-        #client.send('ASK PSEUDO'.encode('utf-8'))
+        # client.send('ASK PSEUDO'.encode('utf-8'))
         client.send('ASK PSEUDO'.encode('utf-8'))
         thread = Thread(target=update_chat, args=(client,))
         thread.start()
@@ -53,25 +59,62 @@ def update_chat(client):
                 i = 0
             elif c_input[1] == "PASSWORD":
                 print(i)
-                userInfo = req_serv # Take back the info of the user taken previously
+                userInfo = req_serv  # Take back the info of the user taken previously
                 req_serv = cmd_pass(c_input[2], userInfo, i)
                 i = req_serv[0]
                 send_message(client, req_serv[1])
         elif c_input[0] == "LIST":
-            req_serv = cmd_list()
+            req_serv = cmd_list(c_input[1], userInfo)
+            if type(req_serv) != list:
+                send_message(client, req_serv)
+            else:
+                send_message_list(client, req_serv)
         elif c_input[0] == "SEND":
-            print("SEND")
+            req_serv = create_file(c_input[1], c_input[2], c_input[3], userInfo)
+            send_message(client, req_serv)
         elif c_input[0] == "GET":
             print("GET")
         elif c_input[0] == "DEL":
             print("DEL")
-        #client.send(req_serv.encode("utf-8"))
+            cmd = c_input[1].split("/")
+            delete_file(cmd)
+        # client.send(req_serv.encode("utf-8"))
 
 
-def cmd_list(directory, userInfo) :
-    #CHECK IF DIRECTORY EXIST
-    
-    # CHECK IF THE USER AS THE CORRECT RIGHT 
+def cmd_list(directory, userInfo):
+    cmd = ""
+    if directory == "/": directory = ""
+    directory = directory.upper()
+    path = 'C:\\Users\\bapti\\Desktop\\pyFTP\\Serveur_Storage\\' + directory
+    # CHECK IF DIRECTORY EXIST
+    check = check_directory(directory, path)
+    if check:
+        check = check_right(directory, userInfo)
+        if check:
+            cmd = os.listdir(path)
+            cmd.insert(0, "SUCCESS")
+            cmd.insert(1, "4")
+        else:
+            cmd = "ERROR LIST 1"
+    else:
+        cmd = "ERROR LIST 0"
+    return cmd
+
+
+def check_directory(directory, path):
+    isFile = os.path.isdir(path)
+    return isFile
+
+
+def check_right(directory, userInfo):
+    check = True
+    cityName = select_id_site(userInfo[0][5])
+    cityName = cityName[0][0]
+    if cityName != "PARIS":
+        if cityName != directory:
+            check = False
+    return check
+
 
 def cmd_pseudo(client, pseudo):
     userInfo = SELECT.sql_select_info_user(pseudo)
@@ -96,6 +139,7 @@ def check_ban(client, userInfo):
     else:
         return userInfo
 
+
 def cmd_pass(input, userInfo, i):
     password = userInfo[0][4]
     check = bcrypt.checkpw(input.encode("utf-8"), password.encode("utf-8"))
@@ -115,38 +159,62 @@ def cmd_pass(input, userInfo, i):
 
 def send_message(client, command):
     client.send(command.encode('utf-8'))
+    print("send message")
 
 
-def create_file(userInfo, filename):
-    text = text.replace("FILE DATA:", "")
-    print(text)
-    city = SELECT.select_id_site(userInfo[0][5])
-    directory = "C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\Serveur_Storage\\" + city[0][0] + "\\" + filename
-    text_file = open(directory, "w")
-
-    text_file.write(text)
-
-    text_file.close()
-
-    # first get all lines from file
-    with open(directory, 'r') as f:
-        lines = f.readlines()
-        # remove spaces
-        lines = [line.replace(' ', '') for line in lines]
-        # finally, write lines in the file
-        with open(directory, 'w') as f:
-            f.writelines(lines)
+def send_message_list(client, command):
+    command = ' '.join(command)
+    client.send(command.encode("utf-8"))
 
 
-def cmd_list(userInfo):
-    city = SELECT.select_id_site(userInfo)
-    directory = "C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\Serveur_Storage\\" + city[0][0]
-    os.chdir(directory)
-    fake_list = "LIST: "
-    for file in glob.glob("*"):
-        fake_list = fake_list + file
-    return fake_list
+def delete_file(cmd) :
 
+
+def create_file(filename, file_data, directory, userInfo):
+    path = 'C:\\Users\\bapti\\Desktop\\pyFTP\\Serveur_Storage\\'
+    check = check_directory(directory, path)
+    if check:
+        check = check_right(directory, userInfo)
+        if check:
+            path = create_copy(path, directory, filename)
+            print(path)
+            with open(path, 'w') as f:
+                f.write(file_data)
+            cmd = "SUCCESS 2"
+        else:
+            cmd = "ERROR LIST 1"
+    else:
+        cmd = "ERROR LIST 0"
+    return cmd
+
+
+def create_copy(path, directory, filename):
+    first_path = path
+    path = path + directory + "\\" + filename
+    isFile = os.path.isfile(path)
+    if isFile:
+        filename = filename.split(".")
+        filename = filename[0] + "(1)" + "." + filename[1]
+        path = first_path + directory + "\\" + filename
+        path = loop_copy(path, first_path, directory)
+    return path
+
+
+def loop_copy(path, first_path, directory): # Permet de créer des copies à l'infini
+    isFile = os.path.isfile(path)
+    i = 1
+    while isFile :
+        head, tail = os.path.split(path)
+        filename = tail
+        filename = filename.split(".")
+        print(filename)
+        new_filename = filename[0].split(filename[0][-3:])
+        new_copy = "(" + str(i) + ")"
+        new_filename = new_filename[0] + new_copy
+        path = first_path + directory + "\\" + new_filename + "." + filename[1]
+        i = i + 1
+        isFile = os.path.isfile(path)
+    return path
 
 def cmd_list_adm():
     print("function cmd_list_adm")

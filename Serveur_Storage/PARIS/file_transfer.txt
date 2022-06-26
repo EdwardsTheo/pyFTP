@@ -1,2 +1,3 @@
-hello
-C:\Users\bapti\Desktop\SRC_FTP-master\Client_Storage\file_transfer.txt
+HELLO
+I'M
+BAPTISTE

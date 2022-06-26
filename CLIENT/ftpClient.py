@@ -1,3 +1,4 @@
+import pickle
 from ctypes import sizeof
 from pickle import TRUE
 import socket
@@ -41,21 +42,23 @@ def receive():
         if stop_thread:
             break
         try:
+            # print(client.recv(1024))
             msg = client.recv(1024).decode('utf-8')
             cmd = msg.split(" ")
             print("-----")
-            print(msg)
+            print(cmd)
             print("------")
             # Command ask by the client
             if cmd[0] == "SUCCESS":  # Prompt to launch command
-                success_print(cmd[1])
-                sort_cmd(client)
+                success_print(client, cmd)
             elif cmd[0] == "ERROR":
                 if cmd[1] == "PSEUDO":
                     error_pseudo(cmd[2])
                     exit()
                 elif cmd[1] == "PASS":
                     cmd = error_pass(cmd[2])
+                elif cmd[1] == "LIST":
+                    error_list(client, cmd[2])
             elif cmd[0] == "ASK":
                 if cmd[1] == "PSEUDO":
                     cmd = ask_pseudo()
@@ -84,17 +87,37 @@ def sort_cmd(client):
         cmd_help()
     elif cmd[0] == "LIST":
         cmd_list(client, cmd)
-    elif cmd[0] == "SEND" or cmd[0] == "GET":
-        print("hi")
+        receive()
+    elif cmd[0] == "SEND":
+        cmd_send(client, cmd)
+        receive()
+        print("send")
+    elif cmd[0] == "GET":
+        print("get")
+    elif cmd[0] == "DEL":
+        cmd.append("/PARIS/file_transfer(1).txt")
+        cmd_del(client, cmd)
+        receive()
     else:
         print("Please select an existing command or press HELP")
-    print("EOF")
     sort_cmd(client)
 
 
-def success_print(code):
-    if code == "0":
+def success_print(client, code):
+    if code[1] == "0":
         print("You are connected ! Press HELP, to see all the avaiable command")
+    elif code[1] == "2":
+        print("The file has been sent")
+    elif code[1] == "4":
+        print_list(code)
+    sort_cmd(client)
+
+
+def print_list(code):
+    del code[0:2]
+    print("Result of the list command :")
+    for elem in code:
+        print("----> " + elem)
 
 
 def ask_pseudo():
@@ -107,7 +130,7 @@ def ask_pseudo():
 
 def ask_password():
     print("Enter your password")
-    #cmd = ask_input()
+    # cmd = ask_input()
     cmd = "Abracadabra@92"
     cmd = "LOG PASSWORD " + cmd
     return cmd
@@ -121,8 +144,15 @@ def error_pseudo(code):
     exit()
 
 
+def error_list(client, code) :
+    if code == "0":
+        print("The directory doesn't exist")
+    elif code == "1":
+        print("You don't have the authorizations to inspect this directory")
+    sort_cmd(client)
+
+
 def error_pass(code):
-    print("hi")
     if code == "0":
         print("Wrong password, send it again")
         cmd = ask_input()
@@ -133,18 +163,64 @@ def error_pass(code):
         exit()
 
 
+def cmd_send(client, cmd):
+    print(cmd)
+    len_cmd = len(cmd)
+    if len_cmd != 3:
+        print("Missing parameters, press HELP to hava the command details")
+        sort_cmd(client)
+    else:
+        if cmd[1] == "" or cmd[2] == "":
+            print("Incorrect parameters")
+            sort_cmd(client)
+        else:
+            path = cmd[1]
+            check = check_file(path)
+            if check:
+                data = get_file_data(path)
+                head, tail = os.path.split(path)
+                name_file = tail
+                send_input("SEND " + name_file + " " + data + " " + cmd[2], client)
+            else:
+                print("The file that you want to send don't exist")
+                sort_cmd(client)
+
+
+def check_file(path):
+    isFile = os.path.isfile(path)
+    return isFile
+
+
+def get_file_data(path):
+    with open(path, 'r') as file:
+        data = file.read()
+    return data
+
+
+def cmd_del(client, cmd):
+    len_cmd = len(cmd)
+    if len_cmd != 1:
+        print("Missing one parameters")
+        sort_cmd(client)
+    else:
+        if cmd[1] == " ":
+            print("Incorrect parameters")
+            sort_cmd(client)
+        else:
+            send_input("DEL " + cmd[1], client)
+
+
 def cmd_list(client, cmd):
     len_cmd = len(cmd)
     if len_cmd != 2:
         print("Missing one parameters")
-        sort_cmd
+        sort_cmd(client)
     else:
         if cmd[1] == " ":
             print("Incorrect parameters")
-            sort_cmd
+            sort_cmd(client)
         else:
             send_input("LIST " + cmd[1], client)
-
 
 
 def ask_input():
@@ -166,6 +242,7 @@ def cmd_help():
     print("----Use : GET {path of the directory/file} {path of the local directory}")
     print("-> DEL  : Delete the file form your company directory")
     print("----Use : DEL {path of the directory/file}")
+
 
 def basic_prompt():
     message = input("ftp_server$> ")

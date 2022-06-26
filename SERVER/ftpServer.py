@@ -4,11 +4,11 @@ from tkinter.tix import Select
 import os, bcrypt, glob
 import sys
 import pickle
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SQL')
+
+sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRCFTP\\pyFTP\\')
+sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRCFTP\\pyFTP\\SQL')
 from SQL import SELECT, MODIFY
 from colors import Color
-
 
 # Adresse IP du serveur
 HOST = "127.0.0.1"
@@ -27,12 +27,13 @@ print(f"[*] Listening as {HOST}:{PORT}")
 clients = list()  # list de clients connectés
 nicknames = list()  # list des pseudos connectés
 
+
 def main():
     while True:
         client, address = MySocket.accept()
         print("Connecté avec " + str(address))
-        client.send('Please write your pseudo'.encode('utf-8'))
-        #client.send('Write a command :'.encode('utf-8'))
+        #client.send('ASK PSEUDO'.encode('utf-8'))
+        client.send('ASK PSEUDO'.encode('utf-8'))
         thread = Thread(target=update_chat, args=(client,))
         thread.start()
 
@@ -40,76 +41,89 @@ def main():
 # thread permettant de traiter les informations recues par les clients
 def update_chat(client):
     while True:
-            msg = ''
-            msg = message = client.recv(1024)
-            text = msg.decode('utf-8')
-            foutput = text.split(":")
-            userInfo = SELECT.sql_select_info_user("btheobald")
-            print(foutput)
-            print(foutput[0])
-            if foutput[0] == "pseudo" :
-                command = prompt_pseudo(foutput, userInfo)
-                client.send(command.encode("utf-8"))
+        msg = ''
+        msg = message = client.recv(1024)
+        text = msg.decode('utf-8')
+        c_input = text.split(" ")
+        print(c_input)
+        if c_input[0] == "LOG":
+            if c_input[1] == "PSEUDO":
+                req_serv = cmd_pseudo(client, c_input[2])
+                send_message(client, "ASK PASSWORD")
                 i = 0
-            elif foutput[0] == "password" : 
-                command = prompt_password(foutput, userInfo, i)
-                print (command)
-                client.send(command.encode("utf-8"))
-            if text == "GET" :
-                command = cmd_get(command)
-                client.send(command.encode("utf-8")) 
-            elif text == "LIST" :
-                command = cmd_list(userInfo)
-                client.send(command.encode("utf-8"))
-            elif text == "HELP" :
-                command = cmd_help(command)
-                client.send(command.encode("utf-8"))
-            if foutput[0] == "FILE TO SEND" :
-                filename = foutput[1]
-                client.send('SEND'.encode("utf-8"))
-            elif foutput[0] == "FILE DATA" :
-                create_file(userInfo, filename)
-    
-def prompt_pseudo(command, userInfo) :
-    userInfo = SELECT.sql_select_info_user(command[1])
-    if userInfo :
-        print(userInfo)
-        if userInfo[0][7] == 1 : 
-            command = "You are banned"
-        else :
-            command = "Please write your password"        
-    else :
-        command = 'Provide an existing user'
-                    
-    return command 
+            elif c_input[1] == "PASSWORD":
+                print(i)
+                userInfo = req_serv # Take back the info of the user taken previously
+                req_serv = cmd_pass(c_input[2], userInfo, i)
+                i = req_serv[0]
+                send_message(client, req_serv[1])
+        elif c_input[0] == "LIST":
+            req_serv = cmd_list()
+        elif c_input[0] == "SEND":
+            print("SEND")
+        elif c_input[0] == "GET":
+            print("GET")
+        elif c_input[0] == "DEL":
+            print("DEL")
+        #client.send(req_serv.encode("utf-8"))
 
-def prompt_password(foutput, userInfo, i) : 
-    print(i)
+
+def cmd_list(directory, userInfo) :
+    #CHECK IF DIRECTORY EXIST
+    
+    # CHECK IF THE USER AS THE CORRECT RIGHT 
+
+def cmd_pseudo(client, pseudo):
+    userInfo = SELECT.sql_select_info_user(pseudo)
+    userInfo = pseudo_exist(client, userInfo)
+    if userInfo != 1:
+        userInfo = check_ban(client, userInfo)
+    return userInfo
+
+
+def pseudo_exist(client, userInfo):
+    if not userInfo:
+        send_message(client, "ERROR PSEUDO 1")
+        test = 1
+        return test
+    else:
+        return userInfo
+
+
+def check_ban(client, userInfo):
+    if userInfo[0][7] == 1:
+        send_message(client, "ERROR PSEUDO 2")
+    else:
+        return userInfo
+
+def cmd_pass(input, userInfo, i):
     password = userInfo[0][4]
-    check = bcrypt.checkpw(foutput[1].encode("utf-8"), password.encode("utf-8"))
-    if check : 
-        command = 'You are connected ! Write your first command or write "HELP" so see all the avaible command'
-    else :
-        i = i + 1
-        if i == 3 :
-            #Ban l'user 
-            MODIFY.update_status_ban(userInfo[1], 1)
-            command = "Connection abandonned because of too many failures"
-        else :
-            command = "Wrong password"
-    print(command)
+    check = bcrypt.checkpw(input.encode("utf-8"), password.encode("utf-8"))
+    if check:
+        command = 'SUCCESS 0'
+    else:
+        if i == 3:
+            # Ban l'user
+            MODIFY.update_status_ban(userInfo[0][1], 1)
+            command = "ERROR PASS 1"
+        else:
+            command = "ERROR PASS 0"
+            i = i + 1
+    command = [i, command]
     return command
 
-def send_message(command, client) : 
+
+def send_message(client, command):
     client.send(command.encode('utf-8'))
 
-def create_file(userInfo, filename) :
+
+def create_file(userInfo, filename):
     text = text.replace("FILE DATA:", "")
     print(text)
     city = SELECT.select_id_site(userInfo[0][5])
     directory = "C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\Serveur_Storage\\" + city[0][0] + "\\" + filename
     text_file = open(directory, "w")
- 
+
     text_file.write(text)
 
     text_file.close()
@@ -117,14 +131,15 @@ def create_file(userInfo, filename) :
     # first get all lines from file
     with open(directory, 'r') as f:
         lines = f.readlines()
-    # remove spaces
+        # remove spaces
         lines = [line.replace(' ', '') for line in lines]
-    # finally, write lines in the file
+        # finally, write lines in the file
         with open(directory, 'w') as f:
             f.writelines(lines)
 
-def cmd_list(userInfo) :
-    city = SELECT.select_id_site(userInfo[0][5])
+
+def cmd_list(userInfo):
+    city = SELECT.select_id_site(userInfo)
     directory = "C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\Serveur_Storage\\" + city[0][0]
     os.chdir(directory)
     fake_list = "LIST: "
@@ -132,11 +147,14 @@ def cmd_list(userInfo) :
         fake_list = fake_list + file
     return fake_list
 
-def cmd_help(command) : 
-    command = "HELP: *****List of all the command**** \n SEND -> Send a file to serveur, please indicate the location of your file \n LIST -> List all the file in your city directory \n GET -> Download a file from the city directory, please indicate the name of the file and where you want to store it"
+
+def cmd_list_adm():
+    print("function cmd_list_adm")
+    command = "Please choose the directory you want to list"
     return command
 
-def cmd_get(command) : 
+
+def cmd_get(command):
     command = "GET: Give the path of the file you want to receive:"
     return command
 

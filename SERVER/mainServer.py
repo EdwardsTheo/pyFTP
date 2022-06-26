@@ -3,6 +3,10 @@ from colorama import init, deinit
 from getpass import getpass
 import collections
 import collections.abc
+
+from SQL.MODIFY import update_status_ban
+from SQL.SELECT import sql_select_all_user
+
 collections.Callable = collections.abc.Callable
 import re, bcrypt
 import sys
@@ -214,6 +218,23 @@ class Main:
         else :
             Color.warning("\n !!!!!!! Please select a existing user ")
 
+    def ban_user(self):
+        users = sql_select_all_user()
+        self.show_user(users)
+        Color.main("\n\n Enter the pseudo of the user of which you want to change the role")
+        pseudo = input().strip()  # Input from user to select an action
+        user = self.check_pseudo(pseudo)
+        print()
+        if pseudo == user[0][3]:
+            if user[0][6] == 0 : print("\n You want to promote this user ? (Y/N ; yes or no) \n")
+            else : print("\n You want to demote this user ? (Y/N ; yes or no) \n")
+            command = input("Your choice   : ").strip()
+            command = self.check_y_n(command, user[0][7])
+            update_status_ban(user[0][0], command)
+            Color.success("The status of the user has been correctly updated ! ")
+        else :
+            Color.warning("\n !!!!!!! Please select a existing user ")
+
     def check_y_n(self, test, status):
         print(status)
         check = False
@@ -355,6 +376,8 @@ class Main:
                 self.delete_user()
             elif command == "5":
                 self.ban_user()
+            elif command == "6":
+                self.admin_promote()
             elif command == "0":
                 Color.main("\n ********** Good bye !  ************")
                 deinit()
@@ -370,7 +393,6 @@ class Main:
         while True:  # While loop to keep the user in the program
             self.show_menu_user()  # Print the menu
             command = input().strip()  # Input from user to select an action
-
             if command == "1":
                 print("hello")
             elif command == "2":
@@ -399,6 +421,7 @@ class Main:
         Color.prompt("3 : List user")
         Color.prompt("4 : Delete user")
         Color.prompt("5 : Change ban user")
+        Color.prompt("6 : Change the role of the usr")
         Color.prompt("0 : Return to the main page")
 
 start = Main()

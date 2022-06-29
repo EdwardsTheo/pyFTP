@@ -5,7 +5,6 @@ import threading
 
 from SQL import SELECT
 
-
 def main_connect():
     a_socket = socket.socket()
     try:
@@ -51,7 +50,6 @@ def receive(client):
                 elif cmd[1] == "PASSWORD":
                     cmd = ask_password()
                     send_input(cmd, client)
-
         except :
             print("the server is not responding")
             exit()
@@ -60,7 +58,6 @@ def receive(client):
 def sort_cmd(client):
     cmd = ask_input()
     cmd = cmd.split(" ")
-    print("command asked")
     if cmd[0] == "HELP":
         cmd_help()
     elif cmd[0] == "LIST":
@@ -69,7 +66,6 @@ def sort_cmd(client):
     elif cmd[0] == "SEND":
         cmd_send(client, cmd)
         receive()
-        print("send")
     elif cmd[0] == "EXIT":
         print("bye bye")
         exit()
@@ -208,7 +204,7 @@ def cmd_del(client, cmd):
 def cmd_list(client, cmd):
     len_cmd = len(cmd)
     if len_cmd != 2:
-        print("Missing one parameters")
+        print("Missing one parameter")
         sort_cmd(client)
     else:
         if cmd[1] == " ":
@@ -221,7 +217,7 @@ def cmd_list(client, cmd):
 def cmd_get(client, cmd):
     len_cmd = len(cmd)
     if len_cmd != 3:
-        print("Missing one parameters")
+        print("Missing one parameter")
         sort_cmd(client)
     else:
         if cmd[1] == "" or cmd[2] == "":
@@ -245,7 +241,6 @@ def create_file(filename, data, destination):
 
 
 def create_copy(path, filename):
-    print(filename)
     first_path = path
     path = path + filename
     isFile = os.path.isfile(path)

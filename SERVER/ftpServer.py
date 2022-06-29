@@ -7,7 +7,7 @@ from threading import Thread
 
 import bcrypt
 
-from SQL.SELECT import select_id_site
+from SQL.SELECT import *
 
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\')
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\SQL')
@@ -293,6 +293,4 @@ def loop_copy(path, first_path, directory):  # Permet de créer des copies à l'
     return path
 
 
-# appelle de la méthode main
-print('Server is Listening ...')
 main()

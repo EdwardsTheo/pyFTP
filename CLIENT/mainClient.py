@@ -1,22 +1,15 @@
 import collections.abc
 from getpass import getpass
 
-from SQL.MODIFY import update_password
-from SQL.SELECT import sql_check_user, select_id_site
+from SQL.MODIFY import *
+from SQL.SELECT import *
 
 collections.Callable = collections.abc.Callable
 import re, bcrypt
-from pyreadline import Readline;
+from colors import Color
+from pyreadline import Readline
 
 readline = Readline()
-# Main menu
-from colorama import init, deinit
-import sys
-
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SQL')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SERVER')
-from colors import Color
 
 
 class mainClient:
@@ -109,7 +102,6 @@ class mainClient:
                 print("Choose a valid number !")
 
     def check_login(self):
-        init()
         Color.main("\n\n ******* WELCOME ! THIS PROGRAM WAS MADE BY LOEIZ-BI AND BAPTISTE ******** \n\n")
         userInfo = password_check = False
 

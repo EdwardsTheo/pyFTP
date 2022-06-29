@@ -1,32 +1,25 @@
-from os import close
-from colorama import init, deinit
-from getpass import getpass
-import collections
 import collections.abc
+from getpass import getpass
 
-from SQL.MODIFY import update_status_ban
-from SQL.SELECT import sql_select_all_user
-
+from SQL.DELETE import *
+from SQL.INSERT import *
+from SQL.MODIFY import *
+from SQL.SELECT import *
 collections.Callable = collections.abc.Callable
 import re, bcrypt
-import sys
-from pyreadline import Readline; readline= Readline()
+from pyreadline import Readline
+
+readline = Readline()
 # Main menu
 from colorama import init, deinit
-import sys
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SQL')
 from colors import Color
-from SELECT import *
-from INSERT import *
-from MODIFY import *
-from DELETE import *
+
 
 class Main:
 
-#########################
-#### USER MANAGEMENT#####
-#########################
+    #########################
+    #### USER MANAGEMENT#####
+    #########################
 
     def add_user(self):  # Function to add an user
         Color.main("\n *********** ADD MENU ************** \n")
@@ -35,7 +28,8 @@ class Main:
         last_name = last_name.upper()
         pseudo = input("Enter the pseudo of the user   :   ").strip()
         pseudo = self.check_pseudo_loop(pseudo)
-        Color.warning("****** Remember the Rules : Lenght superior to 8, one capital and small caps, a number and one special char ****** ")
+        Color.warning(
+            "****** Remember the Rules : Lenght superior to 8, one capital and small caps, a number and one special char ****** ")
         passwd = getpass("Enter the password of the user   :    \n")
         passwd = passwd.strip()
         passwd = self.check_password(passwd)
@@ -46,21 +40,21 @@ class Main:
         city = self.get_city_id(city)
         ban = input("User banned or not, 0 = No, 1 = Yes:    ").strip()
         ban = self.check_ban(ban)
-        sql_insert_user(first_name,last_name,pseudo,passwd,city[0][0],ban)
+        sql_insert_user(first_name, last_name, pseudo, passwd, city[0][0], ban)
         Color.success("The user has been created !")
 
     def know_pseudo_id(self, pseudo):
         id = sql_get_id_pseudo(pseudo)
         return id
 
-    def check_pseudo_loop(self, pseudo) :
+    def check_pseudo_loop(self, pseudo):
         check = False
         while not check:
             user = self.check_pseudo(pseudo)
-            if user :
+            if user:
                 Color.warning("\n !!!!!!! This pseudo is already taken !!!!!! ")
                 pseudo = input("pseudo  :").strip()
-            else :
+            else:
                 check = True
         return pseudo
 
@@ -69,14 +63,15 @@ class Main:
         while check is False:
             check = self.pass_prompt(password)
             if check is False:
-                Color.warning("Not a Valid Password, select an other one\nRemember the Rules : Lenght superior to 8, one capital and small caps, a number and one special char : ")
+                Color.warning(
+                    "Not a Valid Password, select an other one\nRemember the Rules : Lenght superior to 8, one capital and small caps, a number and one special char : ")
                 password = getpass("Password : ").strip()
             else:
                 print("Valid Password")
                 check = True
         return password
 
-    def pass_prompt(self,password):
+    def pass_prompt(self, password):
         if (len(password) < 8):
             check = False
         elif not re.search("[a-z]", password):
@@ -100,17 +95,17 @@ class Main:
         hashed = hashed.decode("utf-8")
         return hashed
 
-    def get_city_id(self, city) :
+    def get_city_id(self, city):
         city = sql_get_city_id(city)
         return city
 
-    def show_city_avaible(self) :
+    def show_city_avaible(self):
         city = sql_show_city()
-        for rows in city :
+        for rows in city:
             print("\nThe city available are :    " + str(rows[0]))
         return city
 
-    def check_city(self, city, city_stored) :
+    def check_city(self, city, city_stored):
         check = self.city_equal_stored(city, city_stored)
         while not check:
             Color.warning("\n !!!!!!! This city is not available !!!!!! ")
@@ -120,8 +115,8 @@ class Main:
 
     def city_equal_stored(self, city, city_stored):
         check = False
-        for rows in city_stored :
-            if str(rows[0]) == city :
+        for rows in city_stored:
+            if str(rows[0]) == city:
                 check = True
         return check
 
@@ -135,18 +130,20 @@ class Main:
         self.show_user(users)
 
     def show_user(self, users):
-            count = 0
-            for rows in users:
-                Color.main("\n-User number: " + str(count + 1))
-                Color.prompt("Nom: " + rows[1])
-                Color.prompt("Prenom: " + rows[2])
-                Color.prompt("Login: " + rows[3])
-                site = self.show_site(rows[5])
-                Color.prompt("Site: " + site)
-                if rows[7] == 0 : Color.prompt("Ban : Non")
-                else : Color.prompt("Ban : Oui")
+        count = 0
+        for rows in users:
+            Color.main("\n-User number: " + str(count + 1))
+            Color.prompt("Nom: " + rows[1])
+            Color.prompt("Prenom: " + rows[2])
+            Color.prompt("Login: " + rows[3])
+            site = self.show_site(rows[5])
+            Color.prompt("Site: " + site)
+            if rows[7] == 0:
+                Color.prompt("Ban : Non")
+            else:
+                Color.prompt("Ban : Oui")
 
-                count = count + 1
+            count = count + 1
 
     def check_ban(self, ban):
         check = False
@@ -159,15 +156,15 @@ class Main:
                 print(ban)
         return ban
 
-    def show_site(self, id) :
+    def show_site(self, id):
         site = select_id_site(id)
         return site[0][0]
 
-#########################
-#### MODIFY USER    #####
-#########################
+    #########################
+    #### MODIFY USER    #####
+    #########################
 
-    def modify_user(self) :
+    def modify_user(self):
         users = sql_select_all_user()
         self.show_user(users)
         Color.main("\n\n Enter an username to modify his informations")
@@ -175,12 +172,13 @@ class Main:
         pseudo = self.check_pseudo_loop_modify(command)
         user = sql_select_info_user(pseudo)
         print(user[0][1])
-        Color.warning("\n ************** If you don't want to change, just press enter to keep the same informations ********** \n")
+        Color.warning(
+            "\n ************** If you don't want to change, just press enter to keep the same informations ********** \n")
         fname = self.input_with_prefill("First name of the user : ", user[0][2])
         name = self.input_with_prefill("Last name of the user : ", user[0][1])
         name = name.upper()
-        pseudo =  self.input_with_prefill("Pseudo of the user  : ", user[0][3])
-        if pseudo != user[0][3] : pseudo = self.check_pseudo_loop_modify_other(pseudo, user[0][3])
+        pseudo = self.input_with_prefill("Pseudo of the user  : ", user[0][3])
+        if pseudo != user[0][3]: pseudo = self.check_pseudo_loop_modify_other(pseudo, user[0][3])
         passwd = getpass("Enter the password of the user   :    \n")
         passwd = passwd.strip()
         passwd = self.check_password(passwd)
@@ -194,7 +192,7 @@ class Main:
         city = self.get_city_id(city)
         ban = self.input_with_prefill("User banned or not, 0 = No, 1 = Yes:    ", user[0][7]).strip()
         ban = self.check_ban(ban)
-        sql_update_user(fname,name,pseudo,passwd,city[0][0],ban, user[0][0])
+        sql_update_user(fname, name, pseudo, passwd, city[0][0], ban, user[0][0])
         Color.success("The informations of the user have been correctly updated ! ")
 
     def get_city_name(self, city):
@@ -209,16 +207,18 @@ class Main:
         user = self.check_pseudo(pseudo)
         print()
         if pseudo == user[0][3]:
-            if user[0][7] == 0 : print("\n You want to ban this user ? (Y/N ; yes or no) \n")
-            else : print("\n You want to deban this user ? (Y/N ; yes or no) \n")
+            if user[0][7] == 0:
+                print("\n You want to ban this user ? (Y/N ; yes or no) \n")
+            else:
+                print("\n You want to deban this user ? (Y/N ; yes or no) \n")
             command = input("Your choice   : ").strip()
             command = self.check_y_n(command, user[0][7])
             update_status_ban(user[0][0], command)
             Color.success("The status of the user has been correctly updated ! ")
-        else :
+        else:
             Color.warning("\n !!!!!!! Please select a existing user ")
 
-    def ban_user(self):
+    def admin_promote(self):
         users = sql_select_all_user()
         self.show_user(users)
         Color.main("\n\n Enter the pseudo of the user of which you want to change the role")
@@ -226,13 +226,15 @@ class Main:
         user = self.check_pseudo(pseudo)
         print()
         if pseudo == user[0][3]:
-            if user[0][6] == 0 : print("\n You want to promote this user ? (Y/N ; yes or no) \n")
-            else : print("\n You want to demote this user ? (Y/N ; yes or no) \n")
+            if user[0][6] == 0:
+                print("\n You want to promote this user ? (Y/N ; yes or no) \n")
+            else:
+                print("\n You want to demote this user ? (Y/N ; yes or no) \n")
             command = input("Your choice   : ").strip()
             command = self.check_y_n(command, user[0][7])
             update_status_ban(user[0][0], command)
             Color.success("The status of the user has been correctly updated ! ")
-        else :
+        else:
             Color.warning("\n !!!!!!! Please select a existing user ")
 
     def check_y_n(self, test, status):
@@ -240,8 +242,10 @@ class Main:
         check = False
         while not check:
             if test == "yes" or test == "no":
-                if status == 0 : test = 1
-                else : test = 0
+                if status == 0:
+                    test = 1
+                else:
+                    test = 0
                 check = True
             else:
                 Color.warning("\n Please select a correct value\n")
@@ -252,38 +256,39 @@ class Main:
         print(user)
         user = sql_modify_pseudo(user)
         for i in range(len(user)):
-            if user[i][0] == pseudo :
+            if user[i][0] == pseudo:
                 return user[i][0]
 
-    def check_pseudo_loop_modify(self, pseudo) :
+    def check_pseudo_loop_modify(self, pseudo):
         check = False
         while not check:
             user = self.check_pseudo(pseudo)
-            if user :
+            if user:
                 check = True
-            else :
+            else:
                 Color.warning("\n !!!!!!! This user doesn't exist !!!!!! ")
                 pseudo = input("Pseudo of the user  :   ").strip()
         return pseudo
 
-    def check_pseudo_loop_modify_other(self, pseudo, user) :
+    def check_pseudo_loop_modify_other(self, pseudo, user):
         check = False
         static_user = user
         while not check:
             user = self.check_modify_pseudo(pseudo, user)
-            if user :
+            if user:
                 Color.warning("\n !!!!!!! This pseudo is already taken !!!!!! ")
                 user = static_user
                 pseudo = input("Pseudo of the user  :   ").strip()
-            else :
+            else:
                 check = True
         return pseudo
 
-
-    def input_with_prefill(self, prompt, text, check_pwd=False):  # Create an input with prefill informations, check_pwd required only if you want to fill for a pwd
+    def input_with_prefill(self, prompt, text,
+                           check_pwd=False):  # Create an input with prefill informations, check_pwd required only if you want to fill for a pwd
         def hook():
             readline.insert_text(text)
             readline.redisplay()
+
         readline.set_pre_input_hook(hook)
 
         if check_pwd:
@@ -294,12 +299,11 @@ class Main:
         readline.set_pre_input_hook()
         return result
 
+    #########################
+    ######## DELETE       ###
+    #########################
 
-#########################
-######## DELETE       ###
-#########################
-
-    def delete_user(self) :
+    def delete_user(self):
         users = sql_select_all_user()
         self.show_user(users)
         Color.main("\n\n Enter an username to modify his informations")
@@ -308,10 +312,9 @@ class Main:
         sql_delete_user(pseudo)
         Color.success("The user have been successfully deleted ! ")
 
-
-#########################
-######## LOGIN PROMPT ###
-#########################
+    #########################
+    ######## LOGIN PROMPT ###
+    #########################
 
     def __init__(self):
         self.check_login()
@@ -322,12 +325,12 @@ class Main:
         Color.main("\n\n ******* WELCOME ! THIS PROGRAM WAS MADE BY LOEIZ-BI AND BAPTISTE ******** \n\n")
         userInfo = password_check = False
 
-        while not userInfo :
+        while not userInfo:
             pseudo = input("- Enter your pseudo to login  : ").strip()
-            userInfo = self.check_pseudo(pseudo) # Check if the pseudo exist
-            if not userInfo :
+            userInfo = self.check_pseudo(pseudo)  # Check if the pseudo exist
+            if not userInfo:
                 Color.warning("\n !!!! Select an existing user !!!!! \n")
-            else :
+            else:
                 count = 3
                 while True:
                     print()
@@ -345,7 +348,7 @@ class Main:
 
                     if count == 0:
                         quit()
-        if userInfo[0][6] == 1 :
+        if userInfo[0][6] == 1:
             Color.warning("\n YOU ARE NOT AN ADMIN !")
             quit()
 
@@ -357,9 +360,9 @@ class Main:
         check = bcrypt.checkpw(passwd.encode("utf-8"), hashed.encode("utf-8"))
         return check
 
-#########################
-######## MAIN MENU ######
-#########################
+    #########################
+    ######## MAIN MENU ######
+    #########################
 
     def main_gestion_user(self):
         Color.main("\n\n ********Welcome to the user gestion program !*********** ")
@@ -385,10 +388,8 @@ class Main:
             else:
                 print("Choose a valid number !")
 
-
-
     def main_menu(self):
-        #self.check_login()
+        # self.check_login()
         Color.main("\n\n ********Welcome in the main program !*********** ")
         while True:  # While loop to keep the user in the program
             self.show_menu_user()  # Print the menu
@@ -423,5 +424,7 @@ class Main:
         Color.prompt("5 : Change ban user")
         Color.prompt("6 : Change the role of the usr")
         Color.prompt("0 : Return to the main page")
+
+
 
 start = Main()

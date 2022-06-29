@@ -1,42 +1,25 @@
-import pickle
-from ctypes import sizeof
-from pickle import TRUE
+import os
 import socket
-from sqlite3 import connect
+import sys
 import threading
-from getpass import getpass
-from threading import Thread
-from datetime import datetime
-# from colorama import Fore, init, Back
-import random
-import os, sys
 
 from SQL import SELECT
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 5002))
 
-stop_thread = False
-
-
-# Test connection
-def try_connect():
+def main_connect():
     a_socket = socket.socket()
     try:
-        a_socket.connect(("127.0.0.1", 5002))  # Tente de se connecter à l'adresse IP et au port suivant
-        a_socket.shutdown(socket.SHUT_RDWR)  # Essaye de se deconnecter du client ? verif que ça marche côté serveur
-        a_socket.close()
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect(('127.0.0.1', 5002))
+        recieve_thread = threading.Thread(target=receive, args=[client])
+        recieve_thread.start()
     except:
         print("The server is not responding")
         return False
 
 
-def client_connect():
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('127.0.0.1', 5002))
-
-
-def receive():
+def receive(client):
+    stop_thread = False
     while True:
         global stop_thread
         if stop_thread:
@@ -45,9 +28,6 @@ def receive():
             # print(client.recv(1024))
             msg = client.recv(1024).decode('utf-8')
             cmd = msg.split(" ")
-            print("-----")
-            print(cmd)
-            print("------")
             # Command ask by the client
             if cmd[0] == "SUCCESS":  # Prompt to launch command
                 success_print(client, cmd)
@@ -72,11 +52,8 @@ def receive():
                     cmd = ask_password()
                     send_input(cmd, client)
 
-        except Exception as e:
-            print(e)
-            exc_type, e, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+        except :
+            print("the server is not responding")
             exit()
 
 
@@ -93,12 +70,15 @@ def sort_cmd(client):
         cmd_send(client, cmd)
         receive()
         print("send")
+    elif cmd[0] == "EXIT":
+        print("bye bye")
+        exit()
     elif cmd[0] == "GET":
         cmd.append("PARIS/file_transfer.txt")
         cmd.append("C:\\Users\\bapti\\Desktop\\pyFTP\\Client_Storage\\")
         cmd_get(client, cmd)
         receive()
-        "GET {path of the directory/file} {path of the local directory}"
+        "GET {path.py of the directory/file} {path.py of the local directory}"
 
     elif cmd[0] == "DEL":
         cmd_del(client, cmd)
@@ -112,7 +92,6 @@ def success_print(client, code):
     if code[1] == "0":
         print("You are connected ! Press HELP, to see all the avaiable command")
     elif code[1] == "1":
-        print(code)
         create_file(code[2], code[3], code[4])
     elif code[1] == "2":
         print("The file has been sent")
@@ -257,7 +236,7 @@ def cmd_get(client, cmd):
                 sort_cmd(client)
 
 
-def create_file(filename, data, destination) :
+def create_file(filename, data, destination):
     path = destination
     path = create_copy(path, filename)
     with open(path, 'w') as f:
@@ -306,13 +285,13 @@ def send_input(command, client):
 def cmd_help():
     print("-> EXIT : Exit the program")
     print("-> LIST : List the files in your company directory")
-    print("---Use : LIST {path of the directory")
+    print("---Use : LIST {path.py of the directory")
     print("-> SEND : Send a file in your company directory")
-    print("----Use : SEND {path of the directory/file} {remote path of the directory}")
+    print("----Use : SEND {path.py of the directory/file} {remote path.py of the directory}")
     print("-> GET  : Get a file from your company directory")
-    print("----Use : GET {path of the directory/file} {path of the local directory}")
+    print("----Use : GET {path.py of the directory/file} {path.py of the local directory}")
     print("-> DEL  : Delete the file form your company directory")
-    print("----Use : DEL {path of the directory/file}")
+    print("----Use : DEL {path.py of the directory/file}")
 
 
 def basic_prompt():
@@ -326,7 +305,4 @@ def show_avaiable_city():
         print("\nThe Directory available are :    " + str(rows[0]))
 
 
-recieve_thread = threading.Thread(target=receive)
-recieve_thread.start()
-# write_thread = threading.Thread(target=write)
-# write_thread.start()
+main_connect()

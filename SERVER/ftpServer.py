@@ -1,16 +1,11 @@
-import json
-import pickle
 import logging
-from datetime import date
-
-import bcrypt
-import glob
 import os
 import socket
 import sys
+from datetime import date
 from threading import Thread
-from os import listdir
-from os.path import isfile, join
+
+import bcrypt
 
 from SQL.SELECT import select_id_site
 
@@ -47,7 +42,8 @@ nicknames = list()  # list des pseudos connectés
 def main():
     while True:
         client, address = MySocket.accept()
-        print("Connecté avec " + str(address))
+        logger.setLevel(logging.INFO)
+        logger.info("Connected with " + str(address))
         client.send('ASK PSEUDO'.encode('utf-8'))
         thread = Thread(target=update_chat, args=(client,))
         thread.start()
@@ -61,6 +57,9 @@ def update_chat(client):
             msg = message = client.recv(1024)
             text = msg.decode('utf-8')
             c_input = text.split(" ")
+            print("---------")
+            print(c_input)
+            print("---------")
             if text == "": exit()
             if c_input[0] == "LOG":
                 if c_input[1] == "PSEUDO":
@@ -89,13 +88,13 @@ def update_chat(client):
                 cmd = c_input[1].split("/")
                 req_serv = delete_file(userInfo, cmd)
                 send_message(client, req_serv)
-            # client.send(req_serv.encode("utf-8"))
         except Exception as e:
             print(e)
             exc_type, e, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
             exit()
+
 
 def cmd_list(directory, userInfo):
     cmd = ""
@@ -162,17 +161,21 @@ def check_ban(client, userInfo):
 
 
 def cmd_pass(input, userInfo, i, client):
+    print("-----------")
+    print(userInfo)
+    print("-----------")
     password = userInfo[0][4]
     check = bcrypt.checkpw(input.encode("utf-8"), password.encode("utf-8"))
     if check:
+        print(input)
         command = 'SUCCESS 0'
         logger.setLevel(logging.INFO)
         logger.info("The user " + userInfo[0][3] + " successfully logged into the server")
     else:
         if i == 2:
             # Ban l'user
-            MODIFY.update_status_ban(userInfo[0][0], 1)
-            command = "ERROR PASS 1"
+            # MODIFY.update_status_ban(userInfo[0][0], 1) # TODO
+            command = "ERROR PASS 0"
             logger.setLevel(logging.CRITICAL)
             logger.critical("The user " + userInfo[0][3] + " missed is password 3 times, he has been banned")
         else:
@@ -183,6 +186,7 @@ def cmd_pass(input, userInfo, i, client):
 
 
 def send_message(client, command):
+    print(command)
     client.send(command.encode('utf-8'))
     print("send message")
 

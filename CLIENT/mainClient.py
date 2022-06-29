@@ -1,28 +1,27 @@
-from os import close
-from colorama import init, deinit
-from getpass import getpass
-import collections
 import collections.abc
+from getpass import getpass
+
+from SQL.MODIFY import update_password
+from SQL.SELECT import sql_check_user, select_id_site
+
 collections.Callable = collections.abc.Callable
 import re, bcrypt
-import sys
-from pyreadline import Readline; readline= Readline()
+from pyreadline import Readline;
+
+readline = Readline()
 # Main menu
 from colorama import init, deinit
-from ftpClient import ftp_client_main
 import sys
+
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master')
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SQL')
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\SRC_FTP-master\\SERVER')
 from colors import Color
-from SELECT import *
-from INSERT import *
-from MODIFY import *
-from DELETE import *
 
-class mainClient :
 
-    def modify_user(self, user) :
+class mainClient:
+
+    def modify_user(self, user):
         passwd = getpass("Enter your new password  :    \n")
         passwd = passwd.strip()
         passwd = self.check_password(passwd)
@@ -35,7 +34,9 @@ class mainClient :
         while check is False:
             check = self.pass_prompt(password)
             if check is False:
-                Color.warning("Not a Valid Password, select an other one\nRemember the Rules : Lenght superior to 8, one capital and small caps, a number and one special char : ")
+                Color.warning(
+                    "Not a Valid Password, select an other one\nRemember the Rules : Lenght superior to 8, "
+                    "one capital and small caps, a number and one special char : ")
                 password = getpass("Password : ").strip()
             else:
                 print("Valid Password")
@@ -67,18 +68,20 @@ class mainClient :
         return hashed
 
     def show_user(self, users):
-            count = 0
-            for rows in users:
-                Color.main("\n-User number: " + str(count + 1))
-                Color.prompt("Nom: " + rows[1])
-                Color.prompt("Prenom: " + rows[2])
-                Color.prompt("Login: " + rows[3])
-                site = self.show_site(rows[5])
-                Color.prompt("Site: " + site)
-                if rows[7] == 0 : Color.prompt("Ban : Non")
-                else : Color.prompt("Ban : Oui")
+        count = 0
+        for rows in users:
+            Color.main("\n-User number: " + str(count + 1))
+            Color.prompt("Nom: " + rows[1])
+            Color.prompt("Prenom: " + rows[2])
+            Color.prompt("Login: " + rows[3])
+            site = self.show_site(rows[5])
+            Color.prompt("Site: " + site)
+            if rows[7] == 0:
+                Color.prompt("Ban : Non")
+            else:
+                Color.prompt("Ban : Oui")
 
-    def show_site(self, id) :
+    def show_site(self, id):
         site = select_id_site(id)
         return site[0][0]
 
@@ -105,18 +108,17 @@ class mainClient :
             else:
                 print("Choose a valid number !")
 
-
     def check_login(self):
         init()
         Color.main("\n\n ******* WELCOME ! THIS PROGRAM WAS MADE BY LOEIZ-BI AND BAPTISTE ******** \n\n")
         userInfo = password_check = False
 
-        while not userInfo :
+        while not userInfo:
             pseudo = input("- Enter your pseudo to login  : ").strip()
-            userInfo = self.check_pseudo(pseudo) # Check if the pseudo exist
-            if not userInfo :
+            userInfo = self.check_pseudo(pseudo)  # Check if the pseudo exist
+            if not userInfo:
                 Color.warning("\n !!!! Select an existing user !!!!! \n")
-            else :
+            else:
                 count = 3
                 while True:
                     print()
@@ -151,5 +153,6 @@ class mainClient :
         Color.prompt("2 : Update my password")
         Color.prompt("3 : Connect to the ftp server")
         Color.prompt("0 : Leave the program")
+
 
 start = mainClient()

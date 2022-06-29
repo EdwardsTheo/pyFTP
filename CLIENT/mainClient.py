@@ -15,7 +15,7 @@ readline = Readline()
 class mainClient:
 
     def modify_user(self, user):
-        passwd = getpass("Enter your new password  :    \n")
+        passwd = input("Enter your new password  :    ")
         passwd = passwd.strip()
         passwd = self.check_password(passwd)
         passwd = self.hash_password(passwd)
@@ -96,7 +96,6 @@ class mainClient:
                 self.modify_user(user)
             elif command == "0":
                 Color.main("\n ********** Good bye !  ************")
-                deinit()
                 break
             else:
                 print("Choose a valid number !")
@@ -114,7 +113,7 @@ class mainClient:
                 count = 3
                 while True:
                     print()
-                    password = getpass("- Enter the password  :  ")
+                    password = input("- Enter the password  :  ")
                     print(len(userInfo))
                     passwd = userInfo[0][4]
                     password_check = self.check_passwd(password, passwd)
@@ -143,7 +142,6 @@ class mainClient:
         Color.prompt("Please enter a number to select an action : \n")
         Color.prompt("1 : Display my informations")
         Color.prompt("2 : Update my password")
-        Color.prompt("3 : Connect to the ftp server")
         Color.prompt("0 : Leave the program")
 
 

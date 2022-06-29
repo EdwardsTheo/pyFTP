@@ -1,4 +1,7 @@
-from CONNECT import *
+import sys
+
+sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\SQL')
+from CONNECT import create_connection
 
 
 def sql_update_user(first_name, last_name, pseudo, passwd, city, ban, id):

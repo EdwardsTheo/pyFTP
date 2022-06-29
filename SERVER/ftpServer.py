@@ -13,57 +13,53 @@ sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\')
 sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\SQL')
 from SQL import SELECT, MODIFY
 
-# Adresse IP du serveur
-HOST = "127.0.0.1"
-PORT = 5002  # port du serveur
-
 today = date.today()
 d = today.strftime("%d_%m_%Y")
 logfile = "C:\\Users\\bapti\\Desktop\\pyFTP\\LOG\\STORAGE\\" + "ftpserver_log_" + d + ".log"
 logging.basicConfig(filename=logfile,
                     format='%(asctime)s %(message)s',
-                    filemode='a')
+                    filemode='a+')
 logger = logging.getLogger()
-
-# initialise une liste de tous les clients connecté au socket
-client_sockets = set()
-MySocket = socket.socket()  # on cré un socket tcp
-MySocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                    1)  # on rend le port reutilisable pour que plusieurs clients puisse s'y connecter
-MySocket.bind((HOST, PORT))  # associe le socket à l'adresse qu'on utilise
-MySocket.listen()  # le socket est en attente de connection, il y aura maximum 42 connections
-print(f"[*] Listening as {HOST}:{PORT}")
-
-# initialisation des listes permettant l'identification des différents clients dans le chat bot
-clients = list()  # list de clients connectés
-nicknames = list()  # list des pseudos connectés
 
 
 def main():
+    HOST = "127.0.0.1"
+    PORT = 5002
+
+    # initialise une liste de tous les clients connecté au socket
+    client_sockets = set()
+    MySocket = socket.socket()  # on cré un socket tcp
+    MySocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                        1)  # on rend le port reutilisable pour que plusieurs clients puisse s'y connecter
+    MySocket.bind((HOST, PORT))  # associe le socket à l'adresse qu'on utilise
+    MySocket.listen()  # le socket est en attente de connection, il y aura maximum 42 connections
+    logger.setLevel(logging.INFO)
+    logger.info("Server started")
+
+    # initialisation des listes permettant l'identification des différents clients dans le chat bot
+    clients = list()  # list de clients connectés
+    nicknames = list()  # list des pseudos connectés
+
     while True:
         client, address = MySocket.accept()
         logger.setLevel(logging.INFO)
         logger.info("Connected with " + str(address))
         client.send('ASK PSEUDO'.encode('utf-8'))
-        thread = Thread(target=update_chat, args=(client,))
+        thread = Thread(target=update_chat, args=(client, logger, str(address)))
         thread.start()
 
 
-# thread permettant de traiter les informations recues par les clients
-def update_chat(client):
+def update_chat(client, logger, address):
     while True:
-        try :
+        try:
             msg = ''
             msg = message = client.recv(1024)
             text = msg.decode('utf-8')
             c_input = text.split(" ")
-            print("---------")
-            print(c_input)
-            print("---------")
             if text == "": exit()
             if c_input[0] == "LOG":
                 if c_input[1] == "PSEUDO":
-                    req_serv = cmd_pseudo(client, c_input[2])
+                    req_serv = cmd_pseudo(client, c_input[2], address)
                     send_message(client, "ASK PASSWORD")
                     i = 0
                     userInfo = req_serv
@@ -84,15 +80,14 @@ def update_chat(client):
                 req_serv = get_file(c_input[1], c_input[2], userInfo, client)
                 send_message(client, req_serv)
             elif c_input[0] == "DEL":
-                print("DEL")
                 cmd = c_input[1].split("/")
                 req_serv = delete_file(userInfo, cmd)
                 send_message(client, req_serv)
         except Exception as e:
-            print(e)
             exc_type, e, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
+            logger.setLevel(logging.WARNING)
+            logger.warning(fname)
             exit()
 
 
@@ -136,17 +131,19 @@ def check_right(directory, userInfo):
     return check
 
 
-def cmd_pseudo(client, pseudo):
+def cmd_pseudo(client, pseudo, address):
     userInfo = SELECT.sql_select_info_user(pseudo)
-    userInfo = pseudo_exist(client, userInfo)
+    userInfo = pseudo_exist(client, userInfo, address)
     if userInfo != 1:
         userInfo = check_ban(client, userInfo)
     return userInfo
 
 
-def pseudo_exist(client, userInfo):
+def pseudo_exist(client, userInfo, address):
     if not userInfo:
         send_message(client, "ERROR PSEUDO 1")
+        logger.setLevel(logging.INFO)
+        logger.info("Failed authentication with ip : " + address)
         test = 1
         return test
     else:
@@ -161,21 +158,17 @@ def check_ban(client, userInfo):
 
 
 def cmd_pass(input, userInfo, i, client):
-    print("-----------")
-    print(userInfo)
-    print("-----------")
     password = userInfo[0][4]
     check = bcrypt.checkpw(input.encode("utf-8"), password.encode("utf-8"))
     if check:
-        print(input)
         command = 'SUCCESS 0'
         logger.setLevel(logging.INFO)
         logger.info("The user " + userInfo[0][3] + " successfully logged into the server")
     else:
         if i == 2:
             # Ban l'user
-            # MODIFY.update_status_ban(userInfo[0][0], 1) # TODO
-            command = "ERROR PASS 0"
+            MODIFY.update_status_ban(userInfo[0][0], 1)
+            command = "ERROR PASS 1"
             logger.setLevel(logging.CRITICAL)
             logger.critical("The user " + userInfo[0][3] + " missed is password 3 times, he has been banned")
         else:
@@ -186,9 +179,7 @@ def cmd_pass(input, userInfo, i, client):
 
 
 def send_message(client, command):
-    print(command)
     client.send(command.encode('utf-8'))
-    print("send message")
 
 
 def send_message_list(client, command):
@@ -283,7 +274,6 @@ def loop_copy(path, first_path, directory):  # Permet de créer des copies à l'
         head, tail = os.path.split(path)
         filename = tail
         filename = filename.split(".")
-        print(filename)
         new_filename = filename[0].split(filename[0][-3:])
         new_copy = "(" + str(i) + ")"
         new_filename = new_filename[0] + new_copy

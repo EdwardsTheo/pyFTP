@@ -1,6 +1,6 @@
 import collections.abc
 from getpass import getpass
-
+from SQL.CONNECT import *
 from SQL.DELETE import *
 from SQL.INSERT import *
 from SQL.MODIFY import *

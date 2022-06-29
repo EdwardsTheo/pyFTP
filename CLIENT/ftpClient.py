@@ -5,6 +5,7 @@ import threading
 
 from SQL import SELECT
 
+
 def main_connect():
     a_socket = socket.socket()
     try:
@@ -20,7 +21,6 @@ def main_connect():
 def receive(client):
     stop_thread = False
     while True:
-        global stop_thread
         if stop_thread:
             break
         try:
@@ -50,8 +50,8 @@ def receive(client):
                 elif cmd[1] == "PASSWORD":
                     cmd = ask_password()
                     send_input(cmd, client)
-        except :
-            print("the server is not responding")
+        except:
+            print("Connection closed")
             exit()
 
 

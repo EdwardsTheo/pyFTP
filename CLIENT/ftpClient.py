@@ -1,16 +1,13 @@
 import os
 import socket
-import sys
 import threading
-
-from SQL import SELECT
 
 
 def main_connect():
     a_socket = socket.socket()
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('127.0.0.1', 5002))
+        client.connect(('127.0.0.1', 5002))  # Connect to the server
         recieve_thread = threading.Thread(target=receive, args=[client])
         recieve_thread.start()
     except:
@@ -25,10 +22,10 @@ def receive(client):
             break
         try:
             # print(client.recv(1024))
-            msg = client.recv(1024).decode('utf-8')
+            msg = client.recv(1024).decode('utf-8')  # Receive the file sent by the server
             cmd = msg.split(" ")
             # Command ask by the client
-            if cmd[0] == "SUCCESS":  # Prompt to launch command
+            if cmd[0] == "SUCCESS":
                 success_print(client, cmd)
             elif cmd[0] == "ERROR":
                 if cmd[1] == "PSEUDO":
@@ -55,7 +52,16 @@ def receive(client):
             exit()
 
 
-def sort_cmd(client):
+def basic_prompt():
+    message = input("ftp_server$> ")
+    return message
+
+
+def send_input(command, client):  # send a command to the server
+    client.send(command.encode("utf-9"))
+
+
+def sort_cmd(client):  # Function to sort the command given by the user
     cmd = ask_input()
     cmd = cmd.split(" ")
     if cmd[0] == "HELP":
@@ -84,9 +90,9 @@ def sort_cmd(client):
     sort_cmd(client)
 
 
-def success_print(client, code):
+def success_print(client, code):  # Sort success message sent by the server
     if code[1] == "0":
-        print("You are connected ! Press HELP, to see all the avaiable command")
+        print("You are connected ! Press HELP, to see all the available command")
     elif code[1] == "1":
         create_file(code[2], code[3], code[4])
     elif code[1] == "2":
@@ -98,11 +104,14 @@ def success_print(client, code):
     sort_cmd(client)
 
 
-def print_list(code):
+def print_list(code):  # Print the list result by the server
     del code[0:2]
     print("Result of the list command :")
     for elem in code:
         print("----> " + elem)
+
+
+##### ASK FUNCTION #########
 
 
 def ask_pseudo():
@@ -118,6 +127,13 @@ def ask_password():
     cmd = "LOG PASSWORD " + cmd
     return cmd
 
+
+def ask_input():
+    msg = input("ftp_server$> ")
+    return msg
+
+
+####### ERROR FUNCTION ########
 
 def error_pseudo(code):
     if code == "1":
@@ -148,6 +164,8 @@ def error_pass(code, client):
         exit()
 
 
+####### CLIENT COMMAND ########
+
 def cmd_send(client, cmd):
     print(cmd)
     len_cmd = len(cmd)
@@ -169,22 +187,6 @@ def cmd_send(client, cmd):
             else:
                 print("The file that you want to send don't exist")
                 sort_cmd(client)
-
-
-def check_file(path):
-    isFile = os.path.isfile(path)
-    return isFile
-
-
-def check_dir(path):
-    isFile = os.path.isdir(path)
-    return isFile
-
-
-def get_file_data(path):
-    with open(path, 'r') as file:
-        data = file.read()
-    return data
 
 
 def cmd_del(client, cmd):
@@ -232,6 +234,34 @@ def cmd_get(client, cmd):
                 sort_cmd(client)
 
 
+def cmd_help():
+    print("-> EXIT : Exit the program")
+    print("-> LIST : List the files in your company directory")
+    print("---Use : LIST {path.py of the directory")
+    print("-> SEND : Send a file in your company directory")
+    print("----Use : SEND {path.py of the directory/file} {remote path.py of the directory}")
+    print("-> GET  : Get a file from your company directory")
+    print("----Use : GET {path.py of the directory/file} {path.py of the local directory}")
+    print("-> DEL  : Delete the file form your company directory")
+    print("----Use : DEL {path.py of the directory/file}")
+
+
+def check_file(path):
+    isFile = os.path.isfile(path)
+    return isFile
+
+
+def check_dir(path):
+    isFile = os.path.isdir(path)
+    return isFile
+
+
+def get_file_data(path):
+    with open(path, 'r') as file:
+        data = file.read()
+    return data
+
+
 def create_file(filename, data, destination):
     path = destination
     path = create_copy(path, filename)
@@ -252,7 +282,7 @@ def create_copy(path, filename):
     return path
 
 
-def loop_copy(path, first_path):  # Permet de créer des copies à l'infini
+def loop_copy(path, first_path):  # Create infinite copy of file
     isFile = os.path.isfile(path)
     i = 1
     while isFile:
@@ -266,38 +296,6 @@ def loop_copy(path, first_path):  # Permet de créer des copies à l'infini
         i = i + 1
         isFile = os.path.isfile(path)
     return path
-
-
-def ask_input():
-    msg = input("ftp_server$> ")
-    return msg
-
-
-def send_input(command, client):
-    client.send(command.encode("utf-8"))
-
-
-def cmd_help():
-    print("-> EXIT : Exit the program")
-    print("-> LIST : List the files in your company directory")
-    print("---Use : LIST {path.py of the directory")
-    print("-> SEND : Send a file in your company directory")
-    print("----Use : SEND {path.py of the directory/file} {remote path.py of the directory}")
-    print("-> GET  : Get a file from your company directory")
-    print("----Use : GET {path.py of the directory/file} {path.py of the local directory}")
-    print("-> DEL  : Delete the file form your company directory")
-    print("----Use : DEL {path.py of the directory/file}")
-
-
-def basic_prompt():
-    message = input("ftp_server$> ")
-    return message
-
-
-def show_avaiable_city():
-    city = SELECT.sql_show_city()
-    for rows in city:
-        print("\nThe Directory available are :    " + str(rows[0]))
 
 
 main_connect()

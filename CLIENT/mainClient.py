@@ -22,7 +22,7 @@ class mainClient:
         update_password(passwd, user[0][0])
         Color.success("Your password have been successfully updated ")
 
-    def check_password(self, password):  # Function to check if the password if checking all the rules
+    def check_password(self, password):  # Function to check if the password is checking all the rules
         check = False
         while check is False:
             check = self.pass_prompt(password)

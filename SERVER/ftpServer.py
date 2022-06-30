@@ -8,10 +8,7 @@ from threading import Thread
 import bcrypt
 
 from SQL.SELECT import *
-
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\')
-sys.path.insert(1, 'C:\\Users\\bapti\\Desktop\\pyFTP\\SQL')
-from SQL import SELECT, MODIFY
+from SQL.MODIFY import *
 
 today = date.today()
 d = today.strftime("%d_%m_%Y")
@@ -23,40 +20,36 @@ logger = logging.getLogger()
 
 
 def main():
-    HOST = "127.0.0.1"
-    PORT = 5002
+    HOST = "127.0.0.1"  # IP of the server
+    PORT = 5002  # Port of the server
 
-    # initialise une liste de tous les clients connecté au socket
-    client_sockets = set()
-    MySocket = socket.socket()  # on cré un socket tcp
+    MySocket = socket.socket()  # Create a socket
     MySocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                        1)  # on rend le port reutilisable pour que plusieurs clients puisse s'y connecter
-    MySocket.bind((HOST, PORT))  # associe le socket à l'adresse qu'on utilise
-    MySocket.listen()  # le socket est en attente de connection, il y aura maximum 42 connections
+                        1)
+    MySocket.bind((HOST, PORT))
+    MySocket.listen()
     logger.setLevel(logging.INFO)
     logger.info("Server started")
 
-    # initialisation des listes permettant l'identification des différents clients dans le chat bot
-    clients = list()  # list de clients connectés
-    nicknames = list()  # list des pseudos connectés
+    clients = list()
 
     while True:
         client, address = MySocket.accept()
         logger.setLevel(logging.INFO)
         logger.info("Connected with " + str(address))
-        client.send('ASK PSEUDO'.encode('utf-8'))
+        client.send('ASK PSEUDO'.encode('utf-8'))  # Ask login for the client, this is the start of the program
         thread = Thread(target=update_chat, args=(client, logger, str(address)))
         thread.start()
 
 
-def update_chat(client, logger, address):
+def update_chat(client, logger, address):  # Main function for treating the message sent by the client
     while True:
         try:
             msg = ''
             msg = message = client.recv(1024)
             text = msg.decode('utf-8')
             c_input = text.split(" ")
-            if text == "": exit()
+            if text == "": exit()  # If the client sent nothing
             if c_input[0] == "LOG":
                 if c_input[1] == "PSEUDO":
                     req_serv = cmd_pseudo(client, c_input[2], address)
@@ -111,50 +104,12 @@ def cmd_list(directory, userInfo):
     return cmd
 
 
-def check_directory(directory, path):
-    isFile = os.path.isdir(path)
-    return isFile
-
-
-def check_file(directory, path):
-    isFile = os.path.isfile(path)
-    return isFile
-
-
-def check_right(directory, userInfo):
-    check = True
-    cityName = select_id_site(userInfo[0][5])
-    cityName = cityName[0][0]
-    if cityName != "PARIS":
-        if cityName != directory:
-            check = False
-    return check
-
-
 def cmd_pseudo(client, pseudo, address):
     userInfo = SELECT.sql_select_info_user(pseudo)
     userInfo = pseudo_exist(client, userInfo, address)
     if userInfo != 1:
         userInfo = check_ban(client, userInfo)
     return userInfo
-
-
-def pseudo_exist(client, userInfo, address):
-    if not userInfo:
-        send_message(client, "ERROR PSEUDO 1")
-        logger.setLevel(logging.INFO)
-        logger.info("Failed authentication with ip : " + address)
-        test = 1
-        return test
-    else:
-        return userInfo
-
-
-def check_ban(client, userInfo):
-    if userInfo[0][7] == 1:
-        send_message(client, "ERROR PSEUDO 2")
-    else:
-        return userInfo
 
 
 def cmd_pass(input, userInfo, i, client):
@@ -178,13 +133,42 @@ def cmd_pass(input, userInfo, i, client):
     return command
 
 
-def send_message(client, command):
-    client.send(command.encode('utf-8'))
+def pseudo_exist(client, userInfo, address):
+    if not userInfo:
+        send_message(client, "ERROR PSEUDO 1")
+        logger.setLevel(logging.INFO)
+        logger.info("Failed authentication with ip : " + address)
+        test = 1
+        return test
+    else:
+        return userInfo
 
 
-def send_message_list(client, command):
-    command = ' '.join(command)
-    client.send(command.encode("utf-8"))
+def check_directory(directory, path):
+    isFile = os.path.isdir(path)
+    return isFile
+
+
+def check_file(directory, path):
+    isFile = os.path.isfile(path)
+    return isFile
+
+
+def check_right(directory, userInfo):
+    check = True
+    cityName = select_id_site(userInfo[0][5])
+    cityName = cityName[0][0]
+    if cityName != "PARIS":
+        if cityName != directory:
+            check = False
+    return check
+
+
+def check_ban(client, userInfo):
+    if userInfo[0][7] == 1:
+        send_message(client, "ERROR PSEUDO 2")
+    else:
+        return userInfo
 
 
 def delete_file(userInfo, cmd):
@@ -283,4 +267,13 @@ def loop_copy(path, first_path, directory):  # Permet de créer des copies à l'
     return path
 
 
-main()
+def send_message(client, command):
+    client.send(command.encode('utf-8'))
+
+
+def send_message_list(client, command):
+    command = ' '.join(command)
+    client.send(command.encode("utf-8"))
+
+
+main()  # Launch main program

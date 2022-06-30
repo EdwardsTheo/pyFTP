@@ -9,7 +9,7 @@ def main_archive():  # Function to create the archive of the server
     d = today.strftime("%d_%m_%Y")
     archive = "archive_" + d + ".zip"  # Name of the archive
 
-    check = 'C:\\Users\\bapti\\Desktop\\pyFTP\\ARCHIVE\\' + archive
+    check = 'C:\\Users\\bapti\\Desktop\\pyFTP\\ARCHIVE\\' + archive     # Path of the archive
     isDir = os.path.isfile(check)
 
     if isDir:

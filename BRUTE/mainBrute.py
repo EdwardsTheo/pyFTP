@@ -60,7 +60,7 @@ def receive_user(user, client, stop_thread):  # Main loop to create a file with 
                 cmd = "LOG PSEUDO " + user
                 send_input(cmd, client)
             elif cmd[1] == "PASSWORD":
-                with open('success_user.txt', 'a+') as f:
+                with open('success_user.txt', 'a+') as f: # If we found a correct user, we print it to an other file for later use
                     f.write(user + "\n")
         elif cmd[0] == "ERROR":
             if cmd[1] == "PSEUDO":
